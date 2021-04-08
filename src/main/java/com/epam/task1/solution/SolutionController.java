@@ -3,19 +3,12 @@ package com.epam.task1.solution;
 import cn.hutool.http.Header;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
-import cn.hutool.json.JSON;
 import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONString;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-//import java.net.http.HttpRequest;
-//import java.net.http.HttpResponse;
-import java.net.SocketTimeoutException;
-import java.rmi.ConnectIOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,45 +19,45 @@ public class SolutionController {
 
     //请求缓存
     private Map<String, Object> provinces = null;
-    private Map<String, Map<String, Object>> citys = new HashMap<String, Map<String, Object>>();
-    private Map<String, Map<String, Object>> countrys = new HashMap<String, Map<String, Object>>();
+    private final Map<String, Map<String, Object>> citys = new HashMap<>();
+    private final Map<String, Map<String, Object>> countrys = new HashMap<>();
 
-    private TokenServer tokenServer;
+    private final TokenServer tokenServer;
+
     {
-            tokenServer = TokenServer.newBuilder();
-            tokenServer.maxFlowRate(100);
-            tokenServer.avgFlowRate(50);
-//            tokenServer
-            tokenServer.build();
+        tokenServer = TokenServer.newBuilder();
+        tokenServer.maxFlowRate(100);
+        tokenServer.avgFlowRate(50);
+        tokenServer.build();
     }
 
     @RequestMapping("/index")
     @ResponseBody
-    public Optional getTemperature(String province, String city, String country) throws InterruptedException {
+    public Optional<String> getTemperature(String province, String city, String country) throws InterruptedException {
 
 
+        //获取不到令牌则进行阻塞
         if (!tokenServer.tryAcquire()) {
             return Optional.of("服务器繁忙，请稍后再试");
         }
         //构建Http请求
-        String url = "http://www.weather.com.cn/data/city3jdata/china.html";
+        String provincesUrl = "http://www.weather.com.cn/data/city3jdata/china.html";
         try {
-
 
             if (null == provinces) {
                 //push to the cahe
-                this.provinces = getOptionalResult(url);
+                this.provinces = getOptionalResult(provincesUrl);
             }
-            String proviceCode = getCode(province, this.provinces);
-            if (null != proviceCode) {
-                String cityCode = getCityCodeByprovinceCode(proviceCode, city);
+            String provinceCode = getCode(province, this.provinces);
+            if (null != provinceCode) {
+                String cityCode = getCityCodeByProvinceCode(provinceCode, city);
                 if (null != cityCode) {
-                    String contryCode = getContryCodeByCityCode(proviceCode + cityCode, country);
-                    if (null != contryCode) {
+                    String countryCode = getCountryCodeByCityCode(provinceCode + cityCode, country);
+                    if (null != countryCode) {
                         return Optional.of(
                                 getOptionalResult("http://www.weather.com.cn/data/sk/"
-                                        + proviceCode + cityCode + contryCode + ".html", null).
-                                        get("weatherinfo", JSONObject.class).get("temp"));
+                                        + provinceCode + cityCode + countryCode + ".html", null).
+                                        get("weatherinfo", JSONObject.class).get("temp").toString());
                     } else {
                         return Optional.of("县不存在");
                     }
@@ -85,19 +78,19 @@ public class SolutionController {
 
     }
 
-    private String getContryCodeByCityCode(String cityCode, String country) throws InterruptedException {
+    private String getCountryCodeByCityCode(String cityCode, String country) throws InterruptedException {
         Map<String, Object> countrys = this.countrys.get(cityCode);
         if (null != countrys) {
             return getCode(country, countrys);
         }
-        String cityUrl = "http://www.weather.com.cn/data/city3jdata/station/" + cityCode + ".html";
-        countrys = getOptionalResult(cityUrl);
+        String countryUrl = "http://www.weather.com.cn/data/city3jdata/station/" + cityCode + ".html";
+        countrys = getOptionalResult(countryUrl);
         this.countrys.put(cityCode, countrys);
 
         return getCode(country, countrys);
     }
 
-    private String getCityCodeByprovinceCode(String proviceCode, String city) throws InterruptedException {
+    private String getCityCodeByProvinceCode(String proviceCode, String city) throws InterruptedException {
         Map<String, Object> citys = this.citys.get(proviceCode);
         if (null != citys) {
             return getCode(city, citys);
@@ -111,10 +104,8 @@ public class SolutionController {
 
     //get the code from the collentions
     private String getCode(String province, Map<String, Object> maps) {
-        //获取指定省份 存在则返回code
-        Iterator<Map.Entry<String, Object>> entries = maps.entrySet().iterator();
-        while (entries.hasNext()) {
-            Map.Entry<String, Object> entry = entries.next();
+        //get the key of value
+        for (Map.Entry<String, Object> entry : maps.entrySet()) {
             if (province.equals(entry.getValue())) {
                 return entry.getKey();
             }
@@ -140,8 +131,8 @@ public class SolutionController {
                 .setConnectionTimeout(2000)
                 .execute();
 
-        if (!result.isOk() ) {
-            if(times==0){
+        if (!result.isOk()) {
+            if (times == 0) {
                 throw new InterruptedException();
             }
             times--;

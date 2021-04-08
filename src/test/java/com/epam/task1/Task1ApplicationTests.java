@@ -24,10 +24,12 @@ class Task1ApplicationTests {
 
     private int threadCount = 1; //子线程数
 
-//    private CountDownLatch countDownLatch = new CountDownLatch(threadCount);
 
+    /**
+     * 多线程测试是否会阻塞，返回服务器繁忙表示tps已达到限定值
+     * */
     @Test
-    public void test() {
+    public void testTps() {
         for (int a = 1; a <= threadCount; a++) {
             Mythread mythread = new Mythread(a);
             Thread thread = new Thread(mythread);
