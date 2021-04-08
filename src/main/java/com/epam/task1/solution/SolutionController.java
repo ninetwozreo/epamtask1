@@ -73,7 +73,7 @@ public class SolutionController {
             e.printStackTrace();
             return Optional.of("系统超时");
         } catch (IORuntimeException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             return Optional.of("请求超时");
         } catch (Exception e) {
             e.printStackTrace();

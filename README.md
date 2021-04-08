@@ -1,6 +1,23 @@
-# epamtask1
-epam task solution
 
+# How to Use
+clone this project into your folder and run
+
+`mvn clean install -DMaven.test.skip=true`
+
+then run 
+
+`mvn spring-boot:run `
+
+to start the application
+
+your can see the answer by visit url localhost:8080/solution/index/
+
+for example if you like to get the temperature of 苏州:
+localhost:8080/solution/index?province=江苏&&city=苏州&&country=苏州
+
+by the way, you can use the Task1ApplicationTests to test the separate conditions
+
+also  you can visit it on http://150.129.43.72:8080/solution/index?province=江苏&&city=苏州&&country=苏州
 # Task 1
 
 Requirements:

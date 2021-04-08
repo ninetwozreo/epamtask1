@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.Date;
 import java.util.Optional;
 
 /**
@@ -16,6 +17,11 @@ import java.util.Optional;
 class Task1ApplicationTests {
 
     private SolutionController so = new SolutionController();
+    private int threadCount = 100; //子线程数
+    private volatile int failTimes = 0; //繁忙次数
+    private volatile int reqTimes = 0; //繁忙次数
+    private volatile long enTime = 0L; //消耗时间
+    private volatile long bt = 0L; //开始时间
 
     @Test
     void contextLoads() {
@@ -41,7 +47,6 @@ class Task1ApplicationTests {
     @Test
     void testWithOutNet() {
         for (int i = 0; i < 10; i++) {
-            Optional a = null;
             try {
                 Optional<String> a1 = so.getTemperature("江苏", "南京", "南京");
                 Assertions.assertEquals("请求超时", a1.get(), "测试失败请断网后测试");
@@ -53,7 +58,6 @@ class Task1ApplicationTests {
 
     @Test
     void testRightInput() {
-        for (int i = 0; i < 300; i++) {
             Optional a = null;
             try {
                 Optional a1 = so.getTemperature("江苏", "苏州", "苏州");
@@ -66,10 +70,7 @@ class Task1ApplicationTests {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
     }
-
-    private int threadCount = 100; //子线程数
 
 
     /**
@@ -77,6 +78,7 @@ class Task1ApplicationTests {
      */
     @Test
     public void testTps() {
+        bt=new Date().getTime();
 
         for (int a = 1; a <= threadCount; a++) {
             Mythread mythread = new Mythread(a);
@@ -84,6 +86,15 @@ class Task1ApplicationTests {
             thread.start();
         }
 
+        try {
+            long waiTime = 60000L;
+            Thread.sleep(waiTime);
+            System.out.println("繁忙次数：" + failTimes);
+            System.out.println("共请求次数：" + reqTimes);
+            System.out.println("耗时：" + enTime / 1000 + "秒");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -100,13 +111,21 @@ class Task1ApplicationTests {
 
         @Override
         public void run() {
-            //执行业务代码
+            //business
             try {
-
-                for (int i = 0; i < 10000; i++) {
+                //every thread get 1500 req
+                for (int i = 0; i < 1500; i++) {
                     Optional a = so.getTemperature("江苏", "南京", "六合");
-                    Assertions.assertEquals("服务器繁忙，请稍后再试",a.get(),"线程"+this.a+"第"+i+"次请求成功"+a);
+                    if (a.get().equals("服务器繁忙，请稍后再试")) {
+                        failTimes++;
+                    }
+                    reqTimes++;
+                    long curt = new Date().getTime();
+                    enTime= curt-bt;
+//                    Assertions.assertEquals("服务器繁忙，请稍后再试", a.get(), "线程" + this.a + "第" + (i + 1) + "次请求成功,温度：" + a.get());
+//                    Assertions.assertEquals("请求超时", a.get(), "线程" + this.a + "第" + (i + 1) + "次请求成功,温度：" + a.get());
                 }
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
