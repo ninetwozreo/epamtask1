@@ -1,5 +1,6 @@
 package com.epam.task1.solution;
 
+import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.http.Header;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 @Controller
 @RequestMapping("/solution")
@@ -27,7 +29,7 @@ public class SolutionController {
     {
         tokenServer = TokenServer.newBuilder();
         tokenServer.maxFlowRate(100);
-        tokenServer.avgFlowRate(50);
+        tokenServer.avgFlowRate(100);
         tokenServer.build();
     }
 
@@ -43,12 +45,12 @@ public class SolutionController {
         //构建Http请求
         String provincesUrl = "http://www.weather.com.cn/data/city3jdata/china.html";
         try {
-
             if (null == provinces) {
                 //push to the cahe
                 this.provinces = getOptionalResult(provincesUrl);
             }
             String provinceCode = getCode(province, this.provinces);
+
             if (null != provinceCode) {
                 String cityCode = getCityCodeByProvinceCode(provinceCode, city);
                 if (null != cityCode) {
@@ -56,19 +58,21 @@ public class SolutionController {
                     if (null != countryCode) {
                         return Optional.of(
                                 getOptionalResult("http://www.weather.com.cn/data/sk/"
-                                        + provinceCode + cityCode + countryCode + ".html", null).
+                                        + provinceCode + cityCode + countryCode + ".html").
                                         get("weatherinfo", JSONObject.class).get("temp").toString());
                     } else {
-                        return Optional.of("县不存在");
+                        return Optional.of("该城市不存在这个县");
                     }
                 } else {
-                    return Optional.of("城市不存在");
+                    return Optional.of("该省不存在这个城市");
                 }
             } else {
                 return Optional.of("省份不存在");
             }
         } catch (InterruptedException e) {
-
+            e.printStackTrace();
+            return Optional.of("系统超时");
+        } catch (IORuntimeException e) {
             e.printStackTrace();
             return Optional.of("请求超时");
         } catch (Exception e) {

@@ -1,45 +1,90 @@
 package com.epam.task1;
 
 import com.epam.task1.solution.SolutionController;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Optional;
 
+/**
+ * to be completed
+ *
+ * @Author shark
+ */
 @SpringBootTest
 class Task1ApplicationTests {
 
+    private SolutionController so = new SolutionController();
 
     @Test
     void contextLoads() {
     }
 
-//    @Test
-//    void testTemp() {
-//        for (int i = 0; i < 100; i++) {
-//            Optional a = so.getTemperature("安徽", "宿州", "砀山s");
-//            System.out.println("执行结果" + a);
-//        }
-//    }
+    @Test
+    void testWrongInput() {
+        for (int i = 0; i < 10; i++) {
+            Optional a = null;
+            try {
+                Optional<String> a1 = so.getTemperature("南京", "江苏", "南京");
+                Optional<String> a2 = so.getTemperature("安徽", "南京", "南京");
+                Optional<String> a3 = so.getTemperature("江苏", "南京", "苏州");
+                Assertions.assertEquals("省份不存在", a1.get(), "失败");
+                Assertions.assertEquals("该省不存在这个城市", a2.get(), "失败");
+                Assertions.assertEquals("该城市不存在这个县", a3.get(), "失败");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-    private int threadCount = 1; //子线程数
+    @Test
+    void testWithOutNet() {
+        for (int i = 0; i < 10; i++) {
+            Optional a = null;
+            try {
+                Optional<String> a1 = so.getTemperature("江苏", "南京", "南京");
+                Assertions.assertEquals("请求超时", a1.get(), "测试失败请断网后测试");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    void testRightInput() {
+        for (int i = 0; i < 300; i++) {
+            Optional a = null;
+            try {
+                Optional a1 = so.getTemperature("江苏", "苏州", "苏州");
+                Optional a2 = so.getTemperature("安徽", "宿州", "砀山");
+                Optional a3 = so.getTemperature("江苏", "南京", "南京");
+                System.out.println("执行结果苏州温度：" + a1);
+                System.out.println("执行结果砀山温度：" + a2);
+                System.out.println("执行结果南京温度：" + a3);
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private int threadCount = 100; //子线程数
 
 
     /**
-     * 多线程测试是否会阻塞，返回服务器繁忙表示tps已达到限定值
-     * */
+     * 多线程测试是否会阻塞，返回服务器繁忙表示tps已达到限定值100
+     */
     @Test
     public void testTps() {
+
         for (int a = 1; a <= threadCount; a++) {
             Mythread mythread = new Mythread(a);
             Thread thread = new Thread(mythread);
             thread.start();
         }
-        try {
-//            countDownLatch.await(); //主线程等待 ,直到countDownLatch 为0
-        } catch (Exception e) {
 
-        }
+
     }
 
     class Mythread implements Runnable {
@@ -55,15 +100,12 @@ class Task1ApplicationTests {
 
         @Override
         public void run() {
-            //执行业务代码a
+            //执行业务代码
             try {
 
-
-                for (int i = 0; i < 1000; i++) {
+                for (int i = 0; i < 10000; i++) {
                     Optional a = so.getTemperature("江苏", "南京", "六合");
-//                    Optional a = so.getTemperature("安徽", "宿州", "砀山");
-                    System.out.println("线程" + this.a + "执行结果" + a);
-                    Thread.sleep(50000000000000L);
+                    Assertions.assertEquals("服务器繁忙，请稍后再试",a.get(),"线程"+this.a+"第"+i+"次请求成功"+a);
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();

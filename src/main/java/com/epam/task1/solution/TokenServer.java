@@ -158,7 +158,7 @@ public class TokenServer {
         synchronized (mutexDoNotUseDirectly) {
             // 否存在足够的桶数量
             if (tokenQueue.size() > 0) {
-                System.out.println("当前令牌数量"+tokenQueue.size());
+//                System.out.println("当前令牌数量"+tokenQueue.size());
                 //队列不为空时返回队首值并移除,队列为空时返回null。非阻塞立即返回。
                 Byte poll = tokenQueue.poll();
                 if (poll != null) {
