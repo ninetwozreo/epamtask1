@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -56,10 +57,13 @@ public class SolutionController {
                 if (null != cityCode) {
                     String countryCode = getCountryCodeByCityCode(provinceCode + cityCode, country);
                     if (null != countryCode) {
+                        System.out.println();
+                        String res = getOptionalResult("http://www.weather.com.cn/data/sk/"
+                                + provinceCode + cityCode + countryCode + ".html").
+                                get("weatherinfo", JSONObject.class).get("temp").toString();
+                        System.out.println(new Date()+"请求成功，结果："+res);
                         return Optional.of(
-                                getOptionalResult("http://www.weather.com.cn/data/sk/"
-                                        + provinceCode + cityCode + countryCode + ".html").
-                                        get("weatherinfo", JSONObject.class).get("temp").toString());
+                                res);
                     } else {
                         return Optional.of("该城市不存在这个县");
                     }
@@ -73,7 +77,6 @@ public class SolutionController {
             e.printStackTrace();
             return Optional.of("系统超时");
         } catch (IORuntimeException e) {
-//            e.printStackTrace();
             return Optional.of("请求超时");
         } catch (Exception e) {
             e.printStackTrace();
